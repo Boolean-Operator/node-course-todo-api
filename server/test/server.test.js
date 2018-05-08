@@ -17,10 +17,9 @@ beforeEach((done) => {
 });
 
 describe('POST /todos', () => {
-
   it('should create a new todo', (done) => {
+    ///THIS VAR RIGHT HERE !!!!
     var text = 'Single test todo';
-
     request(app)
       .post('/todos')
       .send({text: text})
@@ -44,7 +43,6 @@ describe('POST /todos', () => {
 
 // test for bad data
   it('should not create todo with invalid body data', (done) => {
-
     request(app)
       .post('/todos')
       .send({})
