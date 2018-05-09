@@ -66,7 +66,7 @@ app.get('/todos/:id', (req, res) => {
       console.log('Not found');
       return res.status(404).send();
     }
-    console.log('body sent');
+    console.log('body.todo sent');
     res.send({todo: todo});
   }).catch((e) => {
     console.log('Catch');
