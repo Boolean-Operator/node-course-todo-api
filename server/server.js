@@ -58,7 +58,7 @@ app.get('/todos/:id', (req, res) => {
   var id = req.params.id;
 
   if(!ObjectID.isValid(id)) {
-    console.log('Invalid');
+    console.log('Invalid Id');
     return res.status(404).send();
   }
 
@@ -73,10 +73,28 @@ app.get('/todos/:id', (req, res) => {
     console.log('Catch');
     res.status(400).send();
   });
-
 });
 
+app.delete('/todos/:id', (req, res) => {
+  let id = req.params.id;
 
+  if (!ObjectID.isValid(id)) {
+    console.log('Invalid Id');
+    return res.status(404).send();
+  }
+
+  Todo.findByIdAndRemove(id).then((todo) => {
+    if(!todo) {
+      console.log('Item not found');
+      return res.status(404).send();
+    }
+    console.log('Item deleted');
+    res.send({todo});
+  }).catch((e) => {
+    console.log('E Catch');
+    res.status(400).send();
+  });
+});
 
 
 app.listen(port, () => {
