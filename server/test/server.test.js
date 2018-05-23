@@ -1,31 +1,21 @@
 const expect = require('expect');
 const request = require('supertest');
-const {ObjectID} = require('mongodb');
 
+const {ObjectID} = require('mongodb');
 const {app} = require('./../server.js');
 const {Todo} = require('./../models/todo.js');
+const {User} = require('./../models/user.js')
+const{todos, populateTodos, users, populateUsers} = require('./seed/seed.js');
 
-const todos = [{
-  _id: new ObjectID(),
-  text: 'First test todo'
-}, {
-  _id: new ObjectID(),
-  text: 'Second test todo',
-  completed: true,
-  completedAt: 123
-}];
-
-//reset todos array before each test case runs
-beforeEach((done) => {
-  Todo.remove({}).then(() =>{
-    return Todo.insertMany(todos);
-  }).then(() => done());
-});
+//reset and seed todos and users array before each test case runs (function call to seed.js)
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
 describe('POST /todos', () => {
   it('should create a new todo', (done) => {
     ///THIS VAR RIGHT HERE !!!!
     var text = 'Single test todo';
+
     request(app)
       .post('/todos')
       .send({text: text})
@@ -147,10 +137,6 @@ describe('DELETE /todos/:id', () => {
 
 describe('PATCH /todos/:id', () => {
   it('should update the todo text & completed', (done) => {
-//grab id of first Item
-//change text and competed to true
-//200
-//text is changed, completed is true, cmplAT is num, (.toBeA)
   let hexID = todos[0]._id.toHexString();
   let text = "Patched First test item";
 
@@ -170,9 +156,6 @@ describe('PATCH /todos/:id', () => {
   });
 
   it('should clear completedAt when todo is not complete', (done) => {
-    //grab it of second item
-    //update text, set comple to false
-    // text is changed, comp false, compAt null, (.toNotExist)
     let hexID = todos[1]._id.toHexString();
     let text = "Patched Second test item";
     let completedAt = null;
@@ -193,4 +176,79 @@ describe('PATCH /todos/:id', () => {
       .end(done);
 
   });
-})
+});
+
+describe('GET /users/me', () => {
+  it('should return user if authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .set('x-auth', users[0].tokens[0].token)
+      .expect(200)
+      .expect((res) => {
+        expect(res.body._id).toBe(users[0]._id.toHexString());
+        expect(res.body.email).toBe(users[0].email)
+      })
+      .end(done);
+  });
+
+  it('should return 401 if not authenticated', (done) => {
+    request(app)
+      .get('/users/me')
+      .expect(401)
+      .expect((res) => {
+        expect(res.body).toEqual({});
+      })
+      .end(done);
+  })
+});
+
+describe('POST /users', () => {
+  it('should create a user', (done) => {
+    let email = 'example@example.com';
+    let password = '123456';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(200)
+      .expect((res) => {
+        expect(res.header['x-auth']).toExist();
+        expect(res.body._id).toExist();
+        expect(res.body.email).toEqual(email);
+      })
+      .end((err) => {
+        if(err) {
+          return done(err);
+        }
+
+        User.findOne({email}).then((user) => {
+          expect(user).toExist();
+          expect(user.password).toNotEqual(password);
+          done();
+        });
+      });
+  });
+
+  it('should return validation error if request invalid', (done) => {
+    let email = 'itsnotmail';
+    let password = 'short';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
+      .end(done)
+  });
+
+  it('should not create user if email in use', (done) => {
+    let email = 'marktodd@example.com';
+    let password = 'validpass';
+
+    request(app)
+      .post('/users')
+      .send({email, password})
+      .expect(400)
+      .end(done)
+  });
+
+});
