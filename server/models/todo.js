@@ -14,6 +14,18 @@ let Todo = mongoose.model('Todo', {
   completedAt: {
     type: Number,
     default: null
+  },
+  _creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true
+  },
+  group: {
+    type: Number,
+    default: null
+  },
+  dueDate: {
+    type: Number,
+    default: null
   }
 });
 
